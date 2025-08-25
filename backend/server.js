@@ -80,7 +80,7 @@ passport.use(new GoogleStrategy({
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
 app.get('/auth/google/callback', passport.authenticate('google'), (req, res) => {
-  res.redirect('http://localhost:3000/'); // Redirect to frontend
+  res.redirect('https://gnawwaycon.github.io/week6webdev/'); // Redirect to frontend
 });
 
 app.get('/api/current_user', (req, res) => {
