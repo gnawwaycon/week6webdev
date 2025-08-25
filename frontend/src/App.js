@@ -14,20 +14,33 @@ function App() {
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
 
   useEffect(() => {
+    console.log('Checking authentication...');
     fetch(`${API_URL}/api/current_user`, { credentials: 'include' })
       .then(res => {
-        if (res.headers.get("content-length") === "0") return null;
-        return res.json();
+        console.log('Auth response status:', res.status, res.ok);
+        if (res.ok) {
+          return res.json();
+        } else {
+          // If not authenticated, return null to show login page
+          return null;
+        }
       })
       .then(data => {
+        console.log('Auth response data:', data);
         if (data) {
           setUser(data);
+          console.log('User authenticated, fetching todos...');
           fetch(`${API_URL}/api/todos`, { credentials: 'include' })
             .then(res => res.json())
             .then(todosData => setTodos(todosData));
         } else {
+          console.log('No user data, showing login page');
           setUser(null);
         }
+      })
+      .catch(error => {
+        console.error('Authentication error:', error);
+        setUser(null);
       });
   }, []);
 

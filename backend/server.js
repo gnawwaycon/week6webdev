@@ -11,12 +11,22 @@ require('dotenv').config();
 const app = express();
 const port = 5001;
 
+// Log environment configuration
+console.log('Environment configuration:');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
+console.log('GOOGLE_CALLBACK_URL:', process.env.GOOGLE_CALLBACK_URL);
+console.log('Port:', port);
+
 app.set('trust proxy', 1);
 
 // Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000', // Allow your frontend to make requests
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  exposedHeaders: ['Set-Cookie']
 }));
 app.use(express.json());
 app.use(session({
@@ -24,8 +34,8 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    sameSite: 'none', // Required for cross-site cookies
-    secure: true,     // Required for sameSite='none'
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    secure: process.env.NODE_ENV === 'production', // Only require HTTPS in production
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));
@@ -86,18 +96,42 @@ passport.use(new GoogleStrategy({
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
 app.get('/auth/google/callback', passport.authenticate('google'), (req, res) => {
+  console.log('OAuth callback - User authenticated:', req.isAuthenticated());
+  console.log('User object:', req.user);
+  console.log('Session ID:', req.sessionID);
+  
   // Use environment variable for frontend URL, fallback to localhost for development
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  console.log('Redirecting to:', frontendUrl);
   res.redirect(frontendUrl);
 });
 
 app.get('/api/current_user', (req, res) => {
-  res.send(req.user);
+  console.log('Current user request - isAuthenticated:', req.isAuthenticated());
+  console.log('Session ID:', req.sessionID);
+  console.log('User object:', req.user);
+  
+  if (!req.isAuthenticated()) {
+    console.log('User not authenticated, returning 401');
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  console.log('User authenticated, returning user data');
+  res.json(req.user);
 });
 
 app.get('/api/logout', (req, res) => {
   req.logout(() => {
     res.json({ message: 'Logged out successfully' });
+  });
+});
+
+app.get('/api/debug', (req, res) => {
+  res.json({
+    sessionID: req.sessionID,
+    isAuthenticated: req.isAuthenticated(),
+    user: req.user,
+    session: req.session,
+    headers: req.headers
   });
 });
 
