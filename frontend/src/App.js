@@ -3,7 +3,7 @@ import TodoList from './components/TodoList';
 import AddTodoForm from './components/AddTodoForm';
 import './App.css';
 
-const API_URL = 'http://localhost:5001/api/todos';
+const API_URL = 'http://localhost:5001/api/todos'; // Make sure the port is correct
 
 function App() {
   const [todos, setTodos] = useState([]);
@@ -33,7 +33,7 @@ function App() {
       method: 'DELETE',
     })
       .then(() => {
-        setTodos(todos.filter(todo => todo.id !== id));
+        setTodos(todos.filter(todo => todo._id !== id));
       })
       .catch(error => console.error('Error deleting todo:', error));
   };
