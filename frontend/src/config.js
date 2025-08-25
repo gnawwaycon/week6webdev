@@ -5,7 +5,7 @@ const config = {
     API_URL: 'http://localhost:5001'
   },
   production: {
-    API_URL: 'https://gnawwaycon.github.io/week6webdev/' // We'll update this later
+    API_URL: 'https://todo-app-backend-7ka9.onrender.com'
   }
 };
 
