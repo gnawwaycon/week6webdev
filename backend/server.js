@@ -11,9 +11,11 @@ require('dotenv').config();
 const app = express();
 const port = 5001;
 
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://gnawwaycon.github.io/'], // Allow frontend to access
+  origin: 'https://gnawwaycon.github.io', // Allow your frontend to make requests
   credentials: true,
 }));
 app.use(express.json());
@@ -21,7 +23,11 @@ app.use(session({
   secret: process.env.COOKIE_KEY,
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 24 * 60 * 60 * 1000 } // 24 hours
+  cookie: {
+    sameSite: 'none', // Required for cross-site cookies
+    secure: true,     // Required for sameSite='none'
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
 }));
 app.use(passport.initialize());
 app.use(passport.session());
