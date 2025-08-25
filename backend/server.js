@@ -13,7 +13,7 @@ const port = 5001;
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://conwaywang.github.io'], // Allow frontend to access
+  origin: ['http://localhost:3000', 'https://gnawwaycon.github.io/'], // Allow frontend to access
   credentials: true,
 }));
 app.use(express.json());
