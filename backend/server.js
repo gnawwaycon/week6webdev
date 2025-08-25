@@ -15,7 +15,7 @@ app.set('trust proxy', 1);
 
 // Middleware
 app.use(cors({
-  origin: 'https://gnawwaycon.github.io', // Allow your frontend to make requests
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000', // Allow your frontend to make requests
   credentials: true,
 }));
 app.use(express.json());
@@ -64,7 +64,7 @@ passport.deserializeUser(async (id, done) => {
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: '/auth/google/callback',
+  callbackURL: process.env.GOOGLE_CALLBACK_URL || '/auth/google/callback',
   proxy: true
 },
   async (accessToken, refreshToken, profile, done) => {
@@ -86,7 +86,9 @@ passport.use(new GoogleStrategy({
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
 app.get('/auth/google/callback', passport.authenticate('google'), (req, res) => {
-  res.redirect('https://gnawwaycon.github.io/week6webdev/'); // Redirect to frontend
+  // Use environment variable for frontend URL, fallback to localhost for development
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  res.redirect(frontendUrl);
 });
 
 app.get('/api/current_user', (req, res) => {
