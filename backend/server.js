@@ -13,7 +13,7 @@ const port = 5001;
 
 // Middleware
 app.use(cors({
-  origin: 'http://localhost:3000', // Allow frontend to access
+  origin: ['http://localhost:3000', 'https://conwaywang.github.io'], // Allow frontend to access
   credentials: true,
 }));
 app.use(express.json());
@@ -89,7 +89,7 @@ app.get('/api/current_user', (req, res) => {
 
 app.get('/api/logout', (req, res) => {
   req.logout(() => {
-    res.redirect('http://localhost:3000/');
+    res.json({ message: 'Logged out successfully' });
   });
 });
 
@@ -121,6 +121,88 @@ app.delete('/api/todos/:id', requireAuth, async (req, res) => {
   const id = new ObjectId(req.params.id);
   await db.collection('todos').deleteOne({ _id: id, userId: req.user._id });
   res.status(200).json({ message: 'Todo deleted successfully' });
+});
+
+// Gemini Summarization Route
+app.post('/api/summarize', requireAuth, async (req, res) => {
+  const { todos } = req.body;
+  if (!todos || todos.length === 0) {
+    return res.status(400).json({ message: 'No todos to summarize.' });
+  }
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+  const todoListText = todos.map(todo => `- ${todo.text}`).join('\n');
+  const prompt = `Please provide a brief, one-paragraph summary of the following to-do list. Focus on the main themes or categories of tasks:\n\n${todoListText}`;
+
+  try {
+    const payload = {
+      contents: [{
+        parts: [{ text: prompt }]
+      }]
+    };
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      throw new Error(`API call failed with status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    const summary = result.candidates[0].content.parts[0].text;
+    res.json({ summary });
+
+  } catch (error) {
+    console.error('Error with Gemini API:', error);
+    res.status(500).json({ message: 'Failed to generate summary.' });
+  }
+});
+
+// backend/server.js - Add this before connectToDatabase()
+
+// Gemini Summarization Route
+app.post('/api/summarize', requireAuth, async (req, res) => {
+  const { todos } = req.body;
+  if (!todos || todos.length === 0) {
+    return res.status(400).json({ message: 'No todos to summarize.' });
+  }
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+  const todoListText = todos.map(todo => `- ${todo.text}`).join('\n');
+  const prompt = `Please provide a brief, one-paragraph summary of the following to-do list. Focus on the main themes or categories of tasks:\n\n${todoListText}`;
+
+  try {
+    const payload = {
+      contents: [{
+        parts: [{ text: prompt }]
+      }]
+    };
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      throw new Error(`API call failed with status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    const summary = result.candidates[0].content.parts[0].text;
+    res.json({ summary });
+
+  } catch (error) {
+    console.error('Error with Gemini API:', error);
+    res.status(500).json({ message: 'Failed to generate summary.' });
+  }
 });
 
 connectToDatabase();
